@@ -1,7 +1,7 @@
 {
   "name": "dsh-web-dock",
   "version": "0.1.0",
-  "description": "DSH plugin: embed DeepSeek Web (chat.deepseek.com) as an embedded panel in the DSH UI via a same-origin reverse proxy + Service Worker. Supports in-place login, chat, session switching and persisted login state.",
+  "description": "DSH plugin: dock web apps (built-in: DeepSeek Web) into the DSH UI via a same-origin reverse proxy + Service Worker. Supports in-place login, chat, session persistence and diagnostics.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -13,6 +13,22 @@
     },
     "./package.json": "./package.json"
   },
+  "files": [
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepublishOnly": "node --check lib/index.js && node --check lib/client.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CloudGamerMao/dsh-web-dock.git"
+  },
+  "homepage": "https://github.com/CloudGamerMao/dsh-web-dock#readme",
+  "bugs": {
+    "url": "https://github.com/CloudGamerMao/dsh-web-dock/issues"
+  },
   "dsh": {
     "client": {
       "platform": "web",
@@ -20,5 +36,5 @@
     }
   },
   "license": "MIT",
-  "keywords": ["dsh", "deepseek", "poc"]
+  "keywords": ["dsh", "deepseek", "web-dock", "embed", "plugin", "proxy", "poc"]
 }
