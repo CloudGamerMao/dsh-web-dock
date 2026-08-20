@@ -6,12 +6,12 @@
 
 - **内嵌 DeepSeek Web 面板**：在 DSH 侧边栏「新会话」按钮下方新增「DeepSeek Chat」入口，点击即在主区域打开 DeepSeek Web 面板；面板为 body 级原生 DOM 元素，可绕过 React 重挂载，且与 DSH 原生视图行为一致（点击其他侧边栏项自动收起）。
 - **同源反向代理**：宿主端提供 `/__dsweb-test/proxy` 反向代理 + 全域 Service Worker（`/__dsweb-test/sw.js`），将 iframe 内所有 `*.deepseek.com` 请求改写为同源请求，规避 iframe 跨域与混合内容限制。
-- **就地登录**：在面板内直接完成 DeepSeek 账号登录，兼容邮箱密码、验证码（hCaptcha / AWS WAF / 数美 / Cloudflare Turnstile）与**微信扫码登录**（对验证码 SDK 与微信域名做定向放行及 Origin/Referer 重写）。
+- **就地登录**：在面板内直接完成 DeepSeek 账号登录，兼容邮箱密码与验证码（hCaptcha / AWS WAF / 数美 / Cloudflare Turnstile）。微信扫码登录已接入域名白名单与 Origin/Referer 重写，但**尚未完全打通**，见「已知问题与局限」。
 - **会话持久化**：宿主端维护 cookie jar，DeepSeek 登录态持久化到磁盘（`~/.dsh/dsh-deepseek-web/session.json`），DSH 重启后无需重新登录；支持从真实浏览器导入 cookie（`/__dsweb-test/jar-import`）。
 - **静态资源缓存**：对版本化静态资源（fe-static / cdn.deepseek.com）做内存 + 磁盘双层缓存并预取预热，显著加快面板加载速度。
 - **登录态自动同步**：检测到 `userToken` 等登录态写入后自动刷新 iframe，面板会话保持最新。
 - **状态自检与诊断**：`/__dsweb-test/status` 提供 SW 版本、代理自检、域名白名单、会话数、请求统计、WAF 429、SPA 兜底重试、iframe 内 JS 错误等诊断信息，便于排障。
-- **皮肤插件兼容**：面板背景透明、入口按钮克隆 DSH 原生样式，适配第三方皮肤/主题插件。
+- **透明面板设计**：面板背景透明、入口按钮克隆 DSH 原生样式，尽量贴合 DSH 视觉；但第三方皮肤/主题插件**暂不兼容**，见「已知问题与局限」。
 
 ## 架构概览
 
@@ -53,6 +53,8 @@ dsh plugin add dsh-deepseek-web --profile <profile>
 ## 已知问题与局限
 
 - **首次打开需刷新一次页面**：Service Worker 注册存在竞态，首次打开面板可能提示刷新，刷新后即正常。
+- **微信扫码登录暂未解决**：已对微信登录域名（`open.weixin.qq.com` / `*.weixin.qq.com` / `*.wx.qq.com`）做白名单放行与 Origin/Referer 重写，并内置调试记录（`wechatDebug`），但扫码登录链路（二维码渲染、状态轮询、登录态回传）尚未完全打通；当前请优先使用账号密码或验证码登录，微信扫码仅作实验性尝试。
+- **与皮肤/主题插件不兼容**：面板与入口按钮基于 DSH 原生 DOM 结构注入，第三方皮肤/主题插件重绘或替换侧边栏 DOM 时，可能导致入口按钮丢失或面板显示异常，暂未适配。
 - **依赖 DeepSeek 前端结构**：HTML 重写基于正则匹配 `<head>` 与静态资源标签，登录链路（DeepSeekHashV1 工作量证明、SRI、微信二维码等）随 DeepSeek 前端迭代需要持续适配。
 - **验证码 SDK 域名白名单**：`CAPTCHA_HOSTS` 为静态维护，DeepSeek 更换/新增 SDK 域名时需要同步更新。
 - **WAF 限流**：DeepSeek 服务端 WAF 可能对服务器出口 IP 限流（HTTP 429），面板提示「WAF 限流」，属上游限制而非代理缺陷。
@@ -65,6 +67,8 @@ dsh plugin add dsh-deepseek-web --profile <profile>
 
 本项目保持开放，欢迎任何形式的参与——Issue、PR 皆可。以下方向尤其欢迎：
 
+- 打通微信扫码登录（二维码渲染、状态轮询、登录态回传链路）；
+- 适配第三方皮肤/主题插件（DOM 注入与重绘冲突、入口按钮与面板样式兼容）；
 - 新增/更新验证码 SDK 与微信登录域名的白名单适配；
 - 适配 DSH 界面改版（侧边栏 DOM、入口按钮样式）；
 - 跨平台支持（macOS / Linux 的脚本与路径解析）；
