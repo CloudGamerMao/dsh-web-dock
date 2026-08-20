@@ -1,5 +1,8 @@
 # dsh-web-dock
 
+[![npm](https://img.shields.io/npm/v/dsh-web-dock.svg)](https://www.npmjs.com/package/dsh-web-dock)
+[![License](https://img.shields.io/github/license/CloudGamerMao/dsh-web-dock.svg)](https://github.com/CloudGamerMao/dsh-web-dock/blob/main/LICENSE)
+
 > DSH 插件：将 Web 应用以停靠面板形式接入 DSH 界面（当前内置 DeepSeek Web）。通过**同源反向代理 + Service Worker** 将目标站点（chat.deepseek.com）内嵌到 DSH，支持就地登录、会话持久化与面板内聊天，架构可复用于 ChatGPT、Claude 等其他 Web 应用。
 
 ## 界面展示
@@ -35,16 +38,39 @@ DSH UI (127.0.0.1)
         └─ Service Worker 拦截 *.deepseek.com 请求 → 同源代理 → upstream
 ```
 
-## 安装与使用
+## 安装
 
-项目为 DSH 插件，需在 DSH 环境中注册：
+### 从 npm 安装（推荐）
 
 ```bash
-# 通过 dsh CLI 添加插件（或使用项目内的便捷脚本，Windows 下可绕过回收站 shim 问题）
-dsh plugin add dsh-web-dock --profile <profile>
-# 或
-./scripts/dsh-plugin.sh plugin add dsh-web-dock --profile <profile>
+dsh plugin --profile web add dsh-web-dock
 ```
+
+安装完成后重启 DSH Web：
+
+```bash
+dsh web
+```
+
+> 本项目是 **DSH 插件**，请通过 `dsh plugin` 交给 DSH profile 管理，**不要**把 `npm install dsh-web-dock` 当作普通 Node.js 库的安装方式。
+
+### 从 GitHub 安装（开发/测试）
+
+```bash
+dsh plugin --profile web add github:CloudGamerMao/dsh-web-dock
+```
+
+然后重启 DSH Web。
+
+### Windows 便捷脚本（可选）
+
+Windows 下 `dsh plugin add` 若被回收站 shim（`NODE_OPTIONS` 注入）拦截报 "Some operations were aborted"，可用项目内脚本绕过：
+
+```bash
+./scripts/dsh-plugin.sh plugin add dsh-web-dock --profile web
+```
+
+## 使用提示
 
 - 客户端加载依赖 DSH Web Client 的 `@deepseek-ai/dsh-client-runtime`（见 `package.json` 的 `dsh.client.inject` 配置）。
 - 面板入口位于侧边栏「新会话」按钮正下方；**首次打开若提示「首次使用请刷新一次页面」，刷新一次页面即可**（Service Worker 首次注册接管需一次刷新）。
