@@ -76,6 +76,14 @@ Windows 下 `dsh plugin add` 若被回收站 shim（`NODE_OPTIONS` 注入）拦�
 - 面板入口位于侧边栏「新会话」按钮正下方；**首次打开若提示「首次使用请刷新一次页面」，刷新一次页面即可**（Service Worker 首次注册接管需一次刷新）。
 - 脚本中硬编码的本机路径已移除，可通过环境变量 `DSH_BIN` / `DSH_NODE_BIN` 覆盖（默认从 npm 全局目录与 PATH 自动解析）。
 
+## 数据目录与升级
+
+- **数据目录**：`~/.dsh/dsh-web-dock/` —— `session.json`（cookie jar，登录态持久化）+ `asset-cache/`（静态资源磁盘缓存）。
+- **从旧版 `dsh-deepseek-web` 升级**：插件更名后数据目录一并迁移到 `~/.dsh/dsh-web-dock/`，旧目录 `~/.dsh/dsh-deepseek-web/` 不再使用：
+  - 升级后**首次打开面板较慢属正常**：磁盘缓存为冷启动，会自动重新填充（约一次完整加载后恢复秒开）；
+  - 登录态以 127.0.0.1 的 localStorage token 为主，通常无需重新登录；若提示未登录，重新登录一次即可（cookie jar 会自动重建）；
+  - 确认一切正常后，可删除旧目录 `~/.dsh/dsh-deepseek-web/`。
+
 ## 安全模型
 
 - `/__dsweb-test` 下所有路由仅接受**同源请求**（`isSameOrigin`），跨源调用一律 403。
