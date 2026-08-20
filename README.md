@@ -1,13 +1,13 @@
-# dsh-deepseek-web
+# dsh-web-dock
 
-> DSH 插件：通过**同源反向代理 + Service Worker**，将 DeepSeek Web（chat.deepseek.com）以内嵌面板形式接入 DSH 界面，支持就地登录、会话持久化与面板内聊天。
+> DSH 插件：将 Web 应用以停靠面板形式接入 DSH 界面（当前内置 DeepSeek Web）。通过**同源反向代理 + Service Worker** 将目标站点（chat.deepseek.com）内嵌到 DSH，支持就地登录、会话持久化与面板内聊天，架构可复用于 ChatGPT、Claude 等其他 Web 应用。
 
 ## 功能特性
 
 - **内嵌 DeepSeek Web 面板**：在 DSH 侧边栏「新会话」按钮下方新增「DeepSeek Chat」入口，点击即在主区域打开 DeepSeek Web 面板；面板为 body 级原生 DOM 元素，可绕过 React 重挂载，且与 DSH 原生视图行为一致（点击其他侧边栏项自动收起）。
 - **同源反向代理**：宿主端提供 `/__dsweb-test/proxy` 反向代理 + 全域 Service Worker（`/__dsweb-test/sw.js`），将 iframe 内所有 `*.deepseek.com` 请求改写为同源请求，规避 iframe 跨域与混合内容限制。
 - **就地登录**：在面板内直接完成 DeepSeek 账号登录，兼容邮箱密码与验证码（hCaptcha / AWS WAF / 数美 / Cloudflare Turnstile）。微信扫码登录已接入域名白名单与 Origin/Referer 重写，但**尚未完全打通**，见「已知问题与局限」。
-- **会话持久化**：宿主端维护 cookie jar，DeepSeek 登录态持久化到磁盘（`~/.dsh/dsh-deepseek-web/session.json`），DSH 重启后无需重新登录；支持从真实浏览器导入 cookie（`/__dsweb-test/jar-import`）。
+- **会话持久化**：宿主端维护 cookie jar，DeepSeek 登录态持久化到磁盘（`~/.dsh/dsh-web-dock/session.json`），DSH 重启后无需重新登录；支持从真实浏览器导入 cookie（`/__dsweb-test/jar-import`）。
 - **静态资源缓存**：对版本化静态资源（fe-static / cdn.deepseek.com）做内存 + 磁盘双层缓存并预取预热，显著加快面板加载速度。
 - **登录态自动同步**：检测到 `userToken` 等登录态写入后自动刷新 iframe，面板会话保持最新。
 - **状态自检与诊断**：`/__dsweb-test/status` 提供 SW 版本、代理自检、域名白名单、会话数、请求统计、WAF 429、SPA 兜底重试、iframe 内 JS 错误等诊断信息，便于排障。
@@ -35,9 +35,9 @@ DSH UI (127.0.0.1)
 
 ```bash
 # 通过 dsh CLI 添加插件（或使用项目内的便捷脚本，Windows 下可绕过回收站 shim 问题）
-dsh plugin add dsh-deepseek-web --profile <profile>
+dsh plugin add dsh-web-dock --profile <profile>
 # 或
-./scripts/dsh-plugin.sh plugin add dsh-deepseek-web --profile <profile>
+./scripts/dsh-plugin.sh plugin add dsh-web-dock --profile <profile>
 ```
 
 - 客户端加载依赖 DSH Web Client 的 `@deepseek-ai/dsh-client-runtime`（见 `package.json` 的 `dsh.client.inject` 配置）。

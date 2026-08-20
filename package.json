@@ -1,5 +1,5 @@
 {
-  "name": "dsh-deepseek-web",
+  "name": "dsh-web-dock",
   "version": "0.1.0",
   "description": "DSH plugin: embed DeepSeek Web (chat.deepseek.com) as an embedded panel in the DSH UI via a same-origin reverse proxy + Service Worker. Supports in-place login, chat, session switching and persisted login state.",
   "type": "module",
