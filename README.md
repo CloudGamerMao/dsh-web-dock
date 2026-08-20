@@ -2,6 +2,10 @@
 
 > DSH 插件：将 Web 应用以停靠面板形式接入 DSH 界面（当前内置 DeepSeek Web）。通过**同源反向代理 + Service Worker** 将目标站点（chat.deepseek.com）内嵌到 DSH，支持就地登录、会话持久化与面板内聊天，架构可复用于 ChatGPT、Claude 等其他 Web 应用。
 
+## 界面展示
+
+> 稍后补充脱敏后的界面截图。
+
 ## 功能特性
 
 - **内嵌 DeepSeek Web 面板**：在 DSH 侧边栏「新会话」按钮下方新增「DeepSeek Chat」入口，点击即在主区域打开 DeepSeek Web 面板；面板为 body 级原生 DOM 元素，可绕过 React 重挂载，且与 DSH 原生视图行为一致（点击其他侧边栏项自动收起）。
