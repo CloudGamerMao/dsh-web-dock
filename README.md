@@ -17,7 +17,7 @@
 - **同源反向代理**：宿主端提供 `/__dsweb-test/proxy` 反向代理 + 全域 Service Worker（`/__dsweb-test/sw.js`），将 iframe 内所有 `*.deepseek.com` 请求改写为同源请求，规避 iframe 跨域与混合内容限制。
 - **就地登录**：在面板内直接完成 DeepSeek 账号登录，兼容邮箱密码与验证码（hCaptcha / AWS WAF / 数美 / Cloudflare Turnstile）。微信扫码登录已接入域名白名单与 Origin/Referer 重写，但**尚未完全打通**，见「已知问题与局限」。
 - **会话持久化**：宿主端维护 cookie jar，DeepSeek 登录态持久化到磁盘（`~/.dsh/dsh-web-dock/session.json`），DSH 重启后无需重新登录；支持从真实浏览器导入 cookie（`/__dsweb-test/jar-import`）。
-- **静态资源缓存**：对版本化静态资源（fe-static / cdn.deepseek.com）做内存 + 磁盘双层缓存并预取预热，显著加快面板加载速度。
+- **静态资源缓存**：对版本化静态资源（fe-static / cdn.deepseek.com）做内存 + 磁盘双层缓存并预取预热（`~/.dsh/dsh-web-dock/asset-cache/`），显著加快面板加载速度；首次启动缓存为空时首开略慢，加载完成后自动回填，后续秒开。
 - **登录态自动同步**：检测到 `userToken` 等登录态写入后自动刷新 iframe，面板会话保持最新。
 - **状态自检与诊断**：`/__dsweb-test/status` 提供 SW 版本、代理自检、域名白名单、会话数、请求统计、WAF 429、SPA 兜底重试、iframe 内 JS 错误等诊断信息，便于排障。
 - **透明面板设计**：面板背景透明、入口按钮克隆 DSH 原生样式，尽量贴合 DSH 视觉；但第三方皮肤/主题插件**暂不兼容**，见「已知问题与局限」。
@@ -75,10 +75,6 @@ Windows 下 `dsh plugin add` 若被回收站 shim（`NODE_OPTIONS` 注入）拦�
 - 客户端加载依赖 DSH Web Client 的 `@deepseek-ai/dsh-client-runtime`（见 `package.json` 的 `dsh.client.inject` 配置）。
 - 面板入口位于侧边栏「新会话」按钮正下方；**首次打开若提示「首次使用请刷新一次页面」，刷新一次页面即可**（Service Worker 首次注册接管需一次刷新）。
 - 脚本中硬编码的本机路径已移除，可通过环境变量 `DSH_BIN` / `DSH_NODE_BIN` 覆盖（默认从 npm 全局目录与 PATH 自动解析）。
-
-## 数据目录
-
-- `~/.dsh/dsh-web-dock/` —— `session.json`（cookie jar，登录态持久化）+ `asset-cache/`（静态资源磁盘缓存）。首次启动时磁盘缓存为空，首次打开面板会略慢，加载完成后自动回填，后续秒开。
 
 ## 安全模型
 
