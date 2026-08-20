@@ -4,7 +4,9 @@
 
 ## 界面展示
 
-> 稍后补充脱敏后的界面截图。
+![](assets/screenshots/1.jpg)
+
+![](assets/screenshots/2.jpg)
 
 ## 功能特性
 
