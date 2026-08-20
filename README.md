@@ -1,0 +1,78 @@
+# dsh-deepseek-web
+
+> DSH 插件：通过**同源反向代理 + Service Worker**，将 DeepSeek Web（chat.deepseek.com）以内嵌面板形式接入 DSH 界面，支持就地登录、会话持久化与面板内聊天。
+
+## 功能特性
+
+- **内嵌 DeepSeek Web 面板**：在 DSH 侧边栏「新会话」按钮下方新增「DeepSeek Chat」入口，点击即在主区域打开 DeepSeek Web 面板；面板为 body 级原生 DOM 元素，可绕过 React 重挂载，且与 DSH 原生视图行为一致（点击其他侧边栏项自动收起）。
+- **同源反向代理**：宿主端提供 `/__dsweb-test/proxy` 反向代理 + 全域 Service Worker（`/__dsweb-test/sw.js`），将 iframe 内所有 `*.deepseek.com` 请求改写为同源请求，规避 iframe 跨域与混合内容限制。
+- **就地登录**：在面板内直接完成 DeepSeek 账号登录，兼容邮箱密码、验证码（hCaptcha / AWS WAF / 数美 / Cloudflare Turnstile）与**微信扫码登录**（对验证码 SDK 与微信域名做定向放行及 Origin/Referer 重写）。
+- **会话持久化**：宿主端维护 cookie jar，DeepSeek 登录态持久化到磁盘（`~/.dsh/dsh-deepseek-web/session.json`），DSH 重启后无需重新登录；支持从真实浏览器导入 cookie（`/__dsweb-test/jar-import`）。
+- **静态资源缓存**：对版本化静态资源（fe-static / cdn.deepseek.com）做内存 + 磁盘双层缓存并预取预热，显著加快面板加载速度。
+- **登录态自动同步**：检测到 `userToken` 等登录态写入后自动刷新 iframe，面板会话保持最新。
+- **状态自检与诊断**：`/__dsweb-test/status` 提供 SW 版本、代理自检、域名白名单、会话数、请求统计、WAF 429、SPA 兜底重试、iframe 内 JS 错误等诊断信息，便于排障。
+- **皮肤插件兼容**：面板背景透明、入口按钮克隆 DSH 原生样式，适配第三方皮肤/主题插件。
+
+## 架构概览
+
+```
+DSH UI (127.0.0.1)
+├─ lib/index.js  宿主端
+│  ├─ /__dsweb-test/proxy       同源反向代理（域名白名单 + cookie jar + 资产缓存）
+│  ├─ /__dsweb-test/sw.js       全域 Service Worker 脚本
+│  ├─ /__dsweb-test/status      自检/诊断端点
+│  ├─ /__dsweb-test/report      iframe 内 JS 错误收集
+│  └─ /__dsweb-test/jar-import  cookie 手动导入
+└─ lib/client.js  客户端（Web）
+   ├─ 侧边栏入口按钮（克隆「新会话」样式，MutationObserver 保活）
+   └─ 面板 iframe + 悬停控制条（刷新 / 状态 / 关闭）
+        └─ Service Worker 拦截 *.deepseek.com 请求 → 同源代理 → upstream
+```
+
+## 安装与使用
+
+项目为 DSH 插件，需在 DSH 环境中注册：
+
+```bash
+# 通过 dsh CLI 添加插件（或使用项目内的便捷脚本，Windows 下可绕过回收站 shim 问题）
+dsh plugin add dsh-deepseek-web --profile <profile>
+# 或
+./scripts/dsh-plugin.sh plugin add dsh-deepseek-web --profile <profile>
+```
+
+- 客户端加载依赖 DSH Web Client 的 `@deepseek-ai/dsh-client-runtime`（见 `package.json` 的 `dsh.client.inject` 配置）。
+- 面板入口位于侧边栏「新会话」按钮正下方；**首次打开若提示「首次使用请刷新一次页面」，刷新一次页面即可**（Service Worker 首次注册接管需一次刷新）。
+- 脚本中硬编码的本机路径已移除，可通过环境变量 `DSH_BIN` / `DSH_NODE_BIN` 覆盖（默认从 npm 全局目录与 PATH 自动解析）。
+
+## 安全模型
+
+- `/__dsweb-test` 下所有路由仅接受**同源请求**（`isSameOrigin`），跨源调用一律 403。
+- 代理目标受**严格白名单**约束：仅 `*.deepseek.com` 与登录依赖的验证码/微信 SDK 域名（`CAPTCHA_HOSTS`）可被代理，其余一律 403。
+- 本项目**不绕过任何验证码**——仅使验证码 SDK 在 iframe 内可达，验证过程仍需用户手动完成。
+
+## 已知问题与局限
+
+- **首次打开需刷新一次页面**：Service Worker 注册存在竞态，首次打开面板可能提示刷新，刷新后即正常。
+- **依赖 DeepSeek 前端结构**：HTML 重写基于正则匹配 `<head>` 与静态资源标签，登录链路（DeepSeekHashV1 工作量证明、SRI、微信二维码等）随 DeepSeek 前端迭代需要持续适配。
+- **验证码 SDK 域名白名单**：`CAPTCHA_HOSTS` 为静态维护，DeepSeek 更换/新增 SDK 域名时需要同步更新。
+- **WAF 限流**：DeepSeek 服务端 WAF 可能对服务器出口 IP 限流（HTTP 429），面板提示「WAF 限流」，属上游限制而非代理缺陷。
+- **会话明文存储**：cookie jar 以明文 JSON 存放于本机 `~/.dsh/` 目录，未加密，请勿在多用户共享机器上使用。
+- **POC 定位**：项目为实验性质（`package.json` keywords 含 `poc`），存储格式与接口可能随版本演进而变化。
+- **平台绑定**：`scripts/dsh-plugin.sh` 为 Windows 便捷脚本；客户端按钮/面板定位依赖 DSH 侧边栏 DOM 结构（如 `newSession` 等 class 名），DSH 界面改版时需同步适配。
+- **iframe 逃逸**：若面板内页面发生跨域跳转离开代理页面，需点击面板悬停条「刷新」恢复。
+
+## 欢迎社区拓展与贡献
+
+本项目保持开放，欢迎任何形式的参与——Issue、PR 皆可。以下方向尤其欢迎：
+
+- 新增/更新验证码 SDK 与微信登录域名的白名单适配；
+- 适配 DSH 界面改版（侧边栏 DOM、入口按钮样式）；
+- 跨平台支持（macOS / Linux 的脚本与路径解析）；
+- 会话 cookie 加密存储、多会话管理；
+- 面板体验优化（快捷键、多开、窗口记忆等）。
+
+请确保提交前代码通过基础语法检查，并在 PR 描述中说明改动动机与测试情况。
+
+## License
+
+[MIT](LICENSE) © 2026 [CloudGamerMao](https://github.com/CloudGamerMao)
